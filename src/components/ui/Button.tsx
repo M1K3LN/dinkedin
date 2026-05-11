@@ -1,7 +1,7 @@
 import { forwardRef, type ButtonHTMLAttributes } from "react"
 import { cn } from "@/lib/utils"
 
-type Variant = "primary" | "secondary" | "ghost" | "danger"
+type Variant = "primary" | "secondary" | "outline" | "ghost" | "danger"
 type Size = "sm" | "md" | "lg"
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -11,16 +11,20 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variants: Record<Variant, string> = {
-  primary: "bg-primary text-primary-foreground hover:opacity-90",
-  secondary: "border border-border bg-surface hover:bg-surface-muted",
-  ghost: "hover:bg-surface-muted",
-  danger: "bg-red-600 text-white hover:bg-red-700",
+  primary:
+    "bg-accent text-accent-ink hover:brightness-95 active:brightness-90 shadow-[0_1px_0_rgba(11,11,11,0.06),0_8px_24px_-12px_rgba(15,61,46,0.45)]",
+  secondary:
+    "bg-primary text-primary-ink hover:brightness-110 active:brightness-95",
+  outline:
+    "border border-ink/15 bg-surface text-ink hover:bg-surface-2",
+  ghost: "text-ink hover:bg-surface-2",
+  danger: "bg-warn text-white hover:brightness-95",
 }
 
 const sizes: Record<Size, string> = {
-  sm: "h-9 px-3 text-sm rounded-lg",
-  md: "h-11 px-5 text-sm rounded-xl",
-  lg: "h-12 px-6 text-base rounded-xl",
+  sm: "h-9 px-3.5 text-sm rounded-full",
+  md: "h-11 px-5 text-sm rounded-full",
+  lg: "h-13 px-6 text-base rounded-full",
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
@@ -28,7 +32,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     <button
       ref={ref}
       className={cn(
-        "inline-flex items-center justify-center font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed",
+        "inline-flex items-center justify-center gap-2 font-semibold tracking-tight transition disabled:opacity-50 disabled:cursor-not-allowed",
         variants[variant],
         sizes[size],
         fullWidth && "w-full",

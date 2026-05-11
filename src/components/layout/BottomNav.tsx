@@ -6,10 +6,10 @@ import { cn } from "@/lib/utils"
 
 const TABS = [
   { href: "/home", label: "Home", icon: HomeIcon },
-  { href: "/tournaments", label: "Tournaments", icon: TrophyIcon },
-  { href: "/rankings", label: "Rankings", icon: ChartIcon },
+  { href: "/tournaments", label: "Play", icon: TrophyIcon },
+  { href: "/rankings", label: "Ranks", icon: ChartIcon },
   { href: "/rewards", label: "Rewards", icon: GiftIcon },
-  { href: "/profile", label: "Profile", icon: UserIcon },
+  { href: "/profile", label: "You", icon: UserIcon },
 ] as const
 
 export function BottomNav() {
@@ -17,27 +17,38 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Primary"
-      className="sticky bottom-0 z-30 w-full border-t border-border bg-surface/95 backdrop-blur supports-[backdrop-filter]:bg-surface/80 lg:hidden"
+      className="fixed bottom-0 inset-x-0 z-30 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-2 lg:hidden"
     >
-      <ul className="grid grid-cols-5 max-w-md mx-auto">
-        {TABS.map(({ href, label, icon: Icon }) => {
-          const active = pathname === href || pathname.startsWith(href + "/")
-          return (
-            <li key={href}>
-              <Link
-                href={href}
-                className={cn(
-                  "flex flex-col items-center gap-1 py-2.5 text-xs font-medium",
-                  active ? "text-primary" : "text-muted hover:text-foreground",
-                )}
-              >
-                <Icon className="size-5" />
-                <span>{label}</span>
-              </Link>
-            </li>
-          )
-        })}
-      </ul>
+      <div className="mx-auto max-w-md px-3">
+        <ul className="grid grid-cols-5 rounded-full bg-primary text-primary-ink shadow-[0_10px_30px_-10px_rgba(15,61,46,0.45)] ring-1 ring-black/10">
+          {TABS.map(({ href, label, icon: Icon }) => {
+            const active = pathname === href || pathname.startsWith(href + "/")
+            return (
+              <li key={href}>
+                <Link
+                  href={href}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "group relative flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold tracking-wide uppercase transition-colors",
+                    active ? "text-accent" : "text-primary-ink/70 hover:text-primary-ink",
+                  )}
+                >
+                  {/* Active pill backdrop */}
+                  <span
+                    className={cn(
+                      "absolute inset-x-2 top-1.5 bottom-1.5 rounded-full transition-opacity",
+                      active ? "bg-accent/15 opacity-100" : "opacity-0",
+                    )}
+                    aria-hidden
+                  />
+                  <Icon className="relative size-5" />
+                  <span className="relative">{label}</span>
+                </Link>
+              </li>
+            )
+          })}
+        </ul>
+      </div>
     </nav>
   )
 }

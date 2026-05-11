@@ -12,23 +12,23 @@ export const Field = forwardRef<HTMLInputElement, FieldProps>(
     const inputId = id ?? props.name
     return (
       <div className="space-y-1.5">
-        <label htmlFor={inputId} className="text-sm font-medium">
+        <label htmlFor={inputId} className="text-sm font-medium text-ink-2">
           {label}
         </label>
         <input
           ref={ref}
           id={inputId}
           className={cn(
-            "w-full h-11 rounded-xl border border-border bg-surface px-3 text-sm",
-            "focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent",
-            error && "border-red-500 focus:ring-red-500",
+            "w-full h-12 rounded-2xl bg-surface border border-hairline px-4 text-[15px] placeholder:text-muted",
+            "transition-colors hover:border-ink/20",
+            error && "border-warn focus-visible:shadow-[0_0_0_3px_rgba(226,109,92,0.35)]",
             className,
           )}
           aria-invalid={error ? "true" : "false"}
           {...props}
         />
         {hint && !error && <p className="text-xs text-muted">{hint}</p>}
-        {error && <p className="text-xs text-red-600">{error}</p>}
+        {error && <p className="text-xs text-warn font-medium">{error}</p>}
       </div>
     )
   },

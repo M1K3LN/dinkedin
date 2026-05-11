@@ -1,49 +1,109 @@
 @import "tailwindcss";
 
+/* =========================================================================
+   Court & Crown — Dinkedin design tokens
+   Pickleball-native, Strava energy. Chalk surface, deep court green,
+   electric lime as the signature accent.
+   ========================================================================= */
+
 :root {
-  --background: #ffffff;
-  --foreground: #0a0a0a;
-  --surface: #ffffff;
-  --surface-muted: #f5f5f5;
-  --border: #e5e7eb;
-  --primary: #16a34a;       /* pickleball-green */
-  --primary-foreground: #ffffff;
-  --accent: #f59e0b;
-  --muted: #6b7280;
+  /* Surfaces */
+  --bg:           #F7F5EE;  /* chalk: page background */
+  --surface:      #FFFFFF;  /* cards on chalk */
+  --surface-2:    #EFEDE4;  /* subtle panel on chalk */
+  --surface-dark: #0F3D2E;  /* deep court green: hero panels, footer */
+
+  /* Brand */
+  --primary:      #0F3D2E;  /* deep court green */
+  --primary-ink:  #F7F5EE;  /* text on primary */
+  --accent:       #C6FF3D;  /* electric lime — the signature */
+  --accent-ink:   #0B0B0B;  /* text on accent */
+  --warn:         #E26D5C;  /* clay coral */
+  --gold:         #F4C744;  /* podium / verified */
+
+  /* Ink (text) */
+  --ink:          #0B0B0B;
+  --ink-2:        #2E2E2A;
+  --muted:        #6B6B66;
+  --hairline:     #E5E2D6;
+
+  /* Effects */
+  --ring:         color-mix(in oklab, var(--accent) 65%, white);
+  --shadow-soft:  0 1px 0 rgba(11,11,11,0.04), 0 10px 30px -12px rgba(11,11,11,0.18);
+  --radius:       16px;
+  --radius-lg:    22px;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-surface: var(--surface);
-  --color-surface-muted: var(--surface-muted);
-  --color-border: var(--border);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-accent: var(--accent);
-  --color-muted: var(--muted);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg:           var(--bg);
+  --color-surface:      var(--surface);
+  --color-surface-2:    var(--surface-2);
+  --color-surface-dark: var(--surface-dark);
+  --color-primary:      var(--primary);
+  --color-primary-ink:  var(--primary-ink);
+  --color-accent:       var(--accent);
+  --color-accent-ink:   var(--accent-ink);
+  --color-warn:         var(--warn);
+  --color-gold:         var(--gold);
+  --color-ink:          var(--ink);
+  --color-ink-2:        var(--ink-2);
+  --color-muted:        var(--muted);
+  --color-hairline:     var(--hairline);
+
+  /* Aliases used by some Tailwind plugins / our components */
+  --color-background:   var(--bg);
+  --color-foreground:   var(--ink);
+  --color-border:       var(--hairline);
+
+  --font-sans:    var(--font-inter), ui-sans-serif, system-ui, -apple-system,
+                  "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: var(--font-bricolage), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  --radius-card: var(--radius);
+  --radius-pill: 9999px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #f5f5f5;
-    --surface: #111111;
-    --surface-muted: #1a1a1a;
-    --border: #262626;
-    --muted: #9ca3af;
-  }
-}
-
-html, body {
-  height: 100%;
-}
+html, body { height: 100%; }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans), system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background:
+    /* subtle paddle-grid backdrop */
+    radial-gradient(1200px 600px at -10% -10%, rgba(15,61,46,0.06), transparent 60%),
+    radial-gradient(900px 500px at 110% 110%, rgba(198,255,61,0.08), transparent 60%),
+    var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01", "cv11";
   -webkit-font-smoothing: antialiased;
 }
+
+/* Strong, slightly tightened display headings */
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+
+/* Tabular numerals on stat blocks */
+.tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* Hex-clip used by the rank badge */
+.clip-hex {
+  clip-path: polygon(25% 5%, 75% 5%, 98% 50%, 75% 95%, 25% 95%, 2% 50%);
+}
+
+/* Make focus rings the accent color */
+:where(button, [role="button"], a, input, select, textarea):focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--ring);
+  border-radius: 12px;
+}
+
+/* Selection */
+::selection { background: var(--accent); color: var(--accent-ink); }
+
+/* Disable system dark mode override; we ship one canonical light theme. */
+@media (prefers-color-scheme: dark) { :root { color-scheme: light; } }

@@ -1,18 +1,27 @@
 import type { Metadata, Viewport } from "next"
-import { Geist, Geist_Mono } from "next/font/google"
+import { Inter, Bricolage_Grotesque } from "next/font/google"
 import "./globals.css"
 
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] })
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] })
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+  display: "swap",
+})
+
+const bricolage = Bricolage_Grotesque({
+  variable: "--font-bricolage",
+  subsets: ["latin"],
+  display: "swap",
+})
 
 export const metadata: Metadata = {
-  title: "Dinkedin — Pickleball Tournaments, Rankings & Rewards",
+  title: "Dinkedin — Pickleball tournaments, rankings & rewards",
   description:
-    "Join tournaments, climb the rankings, earn reward points, and grow the pickleball community.",
+    "Find tournaments, climb the rankings, and earn rewards. A community-first pickleball platform built for players.",
 }
 
 export const viewport: Viewport = {
-  themeColor: "#16a34a",
+  themeColor: "#0F3D2E",
   width: "device-width",
   initialScale: 1,
 }
@@ -23,9 +32,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${inter.variable} ${bricolage.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col font-sans text-ink">{children}</body>
     </html>
   )
 }

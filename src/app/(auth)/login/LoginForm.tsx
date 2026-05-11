@@ -20,6 +20,7 @@ export function LoginForm() {
         name="email"
         type="email"
         autoComplete="email"
+        placeholder="you@example.com"
         required
         error={state?.errors?.email?.[0]}
       />
@@ -28,17 +29,18 @@ export function LoginForm() {
         name="password"
         type="password"
         autoComplete="current-password"
+        placeholder="••••••••"
         required
         error={state?.errors?.password?.[0]}
       />
 
       {state?.errors?.form && (
-        <p className="text-sm text-red-600 bg-red-50 dark:bg-red-950/30 rounded-lg px-3 py-2">
+        <p className="text-sm text-warn bg-warn/10 rounded-2xl px-3.5 py-2.5 font-medium">
           {state.errors.form[0]}
         </p>
       )}
 
-      <Button type="submit" fullWidth disabled={pending}>
+      <Button type="submit" fullWidth size="lg" disabled={pending}>
         {pending ? <LoadingSpinner className="text-current" /> : "Log in"}
       </Button>
     </form>
