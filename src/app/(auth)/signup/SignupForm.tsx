@@ -39,6 +39,12 @@ export function SignupForm() {
         </p>
       )}
 
+      {state?.message && (
+        <p className="text-sm text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 rounded-lg px-3 py-2">
+          {state.message}
+        </p>
+      )}
+
       <Button type="submit" fullWidth disabled={pending}>
         {pending ? <LoadingSpinner className="text-current" /> : "Create account"}
       </Button>
