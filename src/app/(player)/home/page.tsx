@@ -7,8 +7,10 @@ import { Badge } from "@/components/ui/Badge"
 import { RankBadge } from "@/components/ui/RankBadge"
 import { Stat, StatRow } from "@/components/ui/Stat"
 import { formatNumber } from "@/lib/utils"
+import { PLAY_TYPE_LABELS } from "@/lib/validation"
 
 export const metadata = { title: "Home · Dinkedin" }
+export const dynamic = "force-dynamic"
 
 export default async function HomePage() {
   const user = await requireUser()
@@ -22,6 +24,59 @@ export default async function HomePage() {
     .eq("user_id", user.id)
     .maybeSingle()
 
+  // My active registrations (where I'm the player or the partner).
+  const { data: myRegs } = await supabase
+    .from("tournament_registrations")
+    .select("id, tournament_id, division_id, partner_player_id, status, player_id")
+    .or(`player_id.eq.${user.id},partner_player_id.eq.${user.id}`)
+    .eq("status", "registered")
+
+  let upcoming: UpcomingItem[] = []
+  if (myRegs && myRegs.length > 0) {
+    const tournamentIds = Array.from(new Set(myRegs.map((r) => r.tournament_id)))
+    const divisionIds = Array.from(new Set(myRegs.map((r) => r.division_id)))
+
+    const today = new Date().toISOString().slice(0, 10)
+    const [{ data: tournaments }, { data: divisions }] = await Promise.all([
+      supabase
+        .from("tournaments")
+        .select("id, name, city, state, start_date, end_date, status")
+        .in("id", tournamentIds)
+        .in("status", ["published", "active"])
+        .or(`start_date.is.null,start_date.gte.${today}`)
+        .order("start_date", { ascending: true })
+        .limit(3),
+      supabase
+        .from("tournament_divisions")
+        .select("id, name, play_type")
+        .in("id", divisionIds),
+    ])
+
+    const tournamentMap = new Map((tournaments ?? []).map((t) => [t.id, t]))
+    const divisionMap = new Map((divisions ?? []).map((d) => [d.id, d]))
+
+    upcoming = myRegs
+      .map((r) => {
+        const t = tournamentMap.get(r.tournament_id)
+        const d = divisionMap.get(r.division_id)
+        if (!t || !d) return null
+        return {
+          registrationId: r.id,
+          tournamentId: r.tournament_id,
+          tournamentName: t.name,
+          startDate: t.start_date,
+          endDate: t.end_date,
+          city: t.city,
+          state: t.state,
+          divisionName: d.name,
+          playTypeLabel: PLAY_TYPE_LABELS[d.play_type],
+          hasPartner: r.partner_player_id != null,
+        } as UpcomingItem
+      })
+      .filter((x): x is UpcomingItem => x != null)
+      .slice(0, 3)
+  }
+
   const greetingName =
     playerProfile?.display_name || user.firstName || user.email.split("@")[0]
 
@@ -29,10 +84,11 @@ export default async function HomePage() {
   const losses = playerProfile?.losses ?? 0
   const total = wins + losses
   const winRate = total > 0 ? Math.round((wins / total) * 100) : null
-  const skill = playerProfile?.skill_level != null
-    ? Number(playerProfile.skill_level)
-    : null
-  const reliability = Math.min(100, total * 8) // 0–100 based on matches played
+  const skill =
+    playerProfile?.skill_level != null
+      ? Number(playerProfile.skill_level)
+      : null
+  const reliability = Math.min(100, total * 8)
 
   return (
     <div className="space-y-7">
@@ -59,7 +115,12 @@ export default async function HomePage() {
               the reward points stack up.
             </p>
             <StatRow className="pt-2">
-              <Stat label="Wins" value={formatNumber(wins)} tone="ink" className="text-primary-ink [&_p:first-child]:text-primary-ink/60" />
+              <Stat
+                label="Wins"
+                value={formatNumber(wins)}
+                tone="ink"
+                className="text-primary-ink [&_p:first-child]:text-primary-ink/60"
+              />
               <Stat
                 label="Win rate"
                 value={winRate == null ? "—" : `${winRate}%`}
@@ -77,10 +138,48 @@ export default async function HomePage() {
         </div>
       </Card>
 
+      {/* Up next: registered tournaments */}
+      {upcoming.length > 0 && (
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <CardEyebrow>Up next</CardEyebrow>
+            <span className="text-xs text-muted">
+              {upcoming.length} registration{upcoming.length === 1 ? "" : "s"}
+            </span>
+          </div>
+          <div className="space-y-3">
+            {upcoming.map((u) => (
+              <Link key={u.registrationId} href={`/tournaments/${u.tournamentId}`}>
+                <Card className="flex items-center justify-between gap-3 hover:shadow-[0_8px_30px_-12px_rgba(15,61,46,0.25)] transition-shadow">
+                  <div className="min-w-0">
+                    <p className="font-display text-lg font-bold truncate">
+                      {u.tournamentName}
+                    </p>
+                    <p className="text-sm text-muted mt-0.5">
+                      {u.divisionName} · {u.playTypeLabel}
+                      {u.hasPartner ? " · with partner" : ""}
+                    </p>
+                    <p className="text-sm text-ink-2 mt-1">
+                      {formatRange(u.startDate, u.endDate)} ·{" "}
+                      {[u.city, u.state].filter(Boolean).join(", ") ||
+                        "Location TBA"}
+                    </p>
+                  </div>
+                  <Badge tone="accent">Registered</Badge>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Points row */}
       <div className="grid sm:grid-cols-2 gap-4">
         <Card className="relative overflow-hidden">
-          <div className="absolute -right-8 -top-8 size-32 rounded-full bg-accent/20 blur-2xl" aria-hidden />
+          <div
+            className="absolute -right-8 -top-8 size-32 rounded-full bg-accent/20 blur-2xl"
+            aria-hidden
+          />
           <CardEyebrow>Ranking points</CardEyebrow>
           <p className="font-display text-5xl font-bold tabular mt-1.5">
             {formatNumber(playerProfile?.total_ranking_points ?? 0)}
@@ -103,28 +202,61 @@ export default async function HomePage() {
         </Card>
       </div>
 
-      {/* What's next */}
-      <Card>
-        <div className="flex items-center justify-between gap-3 mb-4">
-          <div>
-            <CardEyebrow>Up next</CardEyebrow>
-            <CardTitle className="mt-1">Find your first tournament</CardTitle>
+      {/* What's next: only show when there's no registration yet */}
+      {upcoming.length === 0 && (
+        <Card>
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <div>
+              <CardEyebrow>Up next</CardEyebrow>
+              <CardTitle className="mt-1">Find your first tournament</CardTitle>
+            </div>
+            <Badge tone="outline">+50 on register</Badge>
           </div>
-          <Badge tone="outline">Phase 1</Badge>
-        </div>
-        <p className="text-ink-2 text-[15px]">
-          Tournament discovery, registration, and match results come online in
-          Phase 2 and 3. For now, set up your profile so you&apos;re ready to play.
-        </p>
-        <div className="mt-5 flex flex-wrap gap-2">
-          <Link href="/tournaments">
-            <Button size="md">Browse tournaments</Button>
-          </Link>
-          <Link href="/profile">
-            <Button size="md" variant="outline">Set up profile</Button>
-          </Link>
-        </div>
-      </Card>
+          <p className="text-ink-2 text-[15px]">
+            Browse published events, pick a division, and lock in your spot.
+            You&apos;ll earn ranking and reward points the moment you register.
+          </p>
+          <div className="mt-5 flex flex-wrap gap-2">
+            <Link href="/tournaments">
+              <Button size="md">Browse tournaments</Button>
+            </Link>
+            <Link href="/profile/edit">
+              <Button size="md" variant="outline">
+                Finish your profile
+              </Button>
+            </Link>
+          </div>
+        </Card>
+      )}
     </div>
   )
+}
+
+type UpcomingItem = {
+  registrationId: string
+  tournamentId: string
+  tournamentName: string
+  startDate: string | null
+  endDate: string | null
+  city: string | null
+  state: string | null
+  divisionName: string
+  playTypeLabel: string
+  hasPartner: boolean
+}
+
+function formatRange(start: string | null, end: string | null) {
+  if (!start) return "Date TBA"
+  const s = new Date(start)
+  const sLabel = s.toLocaleDateString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  })
+  if (!end || end === start) return sLabel
+  const e = new Date(end)
+  return `${sLabel} – ${e.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+  })}`
 }

@@ -1,19 +1,27 @@
+import Link from "next/link"
+import { requireRole } from "@/lib/dal"
 import { PageHeader } from "@/components/ui/PageHeader"
-import { EmptyState } from "@/components/ui/EmptyState"
+import { Button } from "@/components/ui/Button"
+import { NewTournamentForm } from "./NewTournamentForm"
 
-export const metadata = { title: "Create Tournament · Organizer" }
+export const metadata = { title: "Create tournament · Organizer" }
 
-export default function NewTournamentPage() {
+export default async function NewTournamentPage() {
+  await requireRole("organizer", "admin")
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-7 max-w-2xl">
       <PageHeader
-        title="Create tournament"
-        description="Set up a new tournament — name, location, dates, divisions."
+        eyebrow="New tournament"
+        title="Set up the basics"
+        description="Start as a draft. You can edit details and add divisions before publishing."
+        action={
+          <Link href="/organizer/tournaments">
+            <Button variant="ghost" size="sm">Cancel</Button>
+          </Link>
+        }
       />
-      <EmptyState
-        title="Builder coming in Phase 2"
-        description="Phase 1 stands up the schema and permissions. The full tournament + division creation flow ships in Phase 2."
-      />
+      <NewTournamentForm />
     </div>
   )
 }

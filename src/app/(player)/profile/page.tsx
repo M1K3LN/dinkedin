@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { requireUser } from "@/lib/dal"
 import { createClient } from "@/lib/supabase/server"
 import { PageHeader } from "@/components/ui/PageHeader"
@@ -96,11 +97,13 @@ export default async function ProfilePage() {
         </dl>
         <div className="px-5 py-4 border-t border-hairline bg-surface-2 flex items-center justify-between gap-3">
           <p className="text-xs text-muted">
-            Editing arrives in Phase 2 with onboarding.
+            Bio, skill, and home court show up across Dinkedin.
           </p>
-          <Button size="sm" variant="outline" disabled>
-            Edit profile
-          </Button>
+          <Link href="/profile/edit">
+            <Button size="sm" variant="outline">
+              Edit profile
+            </Button>
+          </Link>
         </div>
       </Card>
 

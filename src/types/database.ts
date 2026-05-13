@@ -421,6 +421,7 @@ export type Database = {
     Views: { [_ in never]: never }
     Functions: {
       current_user_role: { Args: never; Returns: Database["public"]["Enums"]["user_role"] }
+      find_user_id_by_email: { Args: { p_email: string }; Returns: string | null }
       is_admin: { Args: never; Returns: boolean }
       is_organizer_or_admin: { Args: never; Returns: boolean }
     }
