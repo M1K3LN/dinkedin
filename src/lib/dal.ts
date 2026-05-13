@@ -30,18 +30,20 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
     .maybeSingle()
 
   if (error || !profile) {
-    console.warn("[getSessionUser] profile lookup miss", {
-      authUserId: user.id,
-      authEmail: user.email,
-      hasProfile: !!profile,
-      error: error?.message ?? null,
-    })
+    // Cross-check what auth.uid() resolves to inside Postgres — if it
+    // differs from user.id, RLS will reject the SELECT silently.
+    let pgUid: string | null = null
+    try {
+      const { data } = await supabase.rpc("debug_auth_uid")
+      pgUid = (data as string | null) ?? null
+    } catch {}
+    console.warn(
+      `[getSessionUser] profile MISS · authUserId=${user.id} email=${user.email} pgAuthUid=${pgUid} error=${error?.message ?? "null"}`,
+    )
   } else {
-    console.log("[getSessionUser] resolved", {
-      authUserId: user.id,
-      email: profile.email,
-      role: profile.role,
-    })
+    console.log(
+      `[getSessionUser] OK · authUserId=${user.id} role=${profile.role}`,
+    )
   }
 
   return {
