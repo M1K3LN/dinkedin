@@ -12,6 +12,7 @@ import {
   type PLAY_TYPE_OPTIONS,
 } from "@/lib/validation"
 import { DivisionRegisterCard } from "./DivisionRegisterCard"
+import { MatchesList } from "./MatchesList"
 
 export const dynamic = "force-dynamic"
 
@@ -197,6 +198,10 @@ export default async function PublicTournamentPage({
           </Card>
         )}
       </section>
+
+      {(tournament.status === "active" || tournament.status === "completed") && (
+        <MatchesList tournamentId={id} currentUserId={user.id} />
+      )}
     </div>
   )
 }

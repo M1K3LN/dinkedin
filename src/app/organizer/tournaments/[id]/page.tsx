@@ -10,6 +10,8 @@ import { EditTournamentBasics } from "./EditTournamentBasics"
 import { DivisionsManager } from "./DivisionsManager"
 import { PublishCard } from "./PublishCard"
 import { RosterSection } from "./RosterSection"
+import { MatchesSection } from "./MatchesSection"
+import { FinalizeSection } from "./FinalizeSection"
 import { GENDER_TYPE_LABELS, PLAY_TYPE_LABELS } from "@/lib/validation"
 
 export const dynamic = "force-dynamic"
@@ -155,6 +157,25 @@ export default async function OrganizerTournamentPage({
       </Card>
 
       <RosterSection tournamentId={id} />
+
+      {tournament.status !== "draft" && (
+        <>
+          <MatchesSection
+            tournamentId={id}
+            locked={
+              tournament.status === "completed" ||
+              tournament.status === "canceled"
+            }
+          />
+          {tournament.status !== "completed" &&
+            tournament.status !== "canceled" && (
+              <FinalizeSection
+                tournamentId={id}
+                tournamentStatus={tournament.status}
+              />
+            )}
+        </>
+      )}
     </div>
   )
 }

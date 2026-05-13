@@ -23,6 +23,28 @@ export default async function ProfilePage() {
     .eq("user_id", user.id)
     .maybeSingle()
 
+  // Podium finishes — show as achievement chips
+  const { data: placementEvents } = await supabase
+    .from("ranking_events")
+    .select("id, reason, tournament_id, created_at")
+    .eq("player_id", user.id)
+    .in("reason", ["first_place", "second_place", "third_place"])
+    .order("created_at", { ascending: false })
+    .limit(8)
+
+  const tournamentIds = Array.from(
+    new Set((placementEvents ?? []).map((e) => e.tournament_id).filter((x): x is string => x != null)),
+  )
+  const { data: placementTournaments } = tournamentIds.length
+    ? await supabase
+        .from("tournaments")
+        .select("id, name")
+        .in("id", tournamentIds)
+    : { data: [] }
+  const tNameMap = new Map(
+    (placementTournaments ?? []).map((t) => [t.id, t.name]),
+  )
+
   const fullName =
     [user.firstName, user.lastName].filter(Boolean).join(" ") ||
     playerProfile?.display_name ||
@@ -74,6 +96,43 @@ export default async function ProfilePage() {
           </div>
         </div>
       </Card>
+
+      {/* Achievements */}
+      {placementEvents && placementEvents.length > 0 && (
+        <section className="space-y-3">
+          <CardEyebrow>Achievements</CardEyebrow>
+          <div className="grid sm:grid-cols-2 gap-3">
+            {placementEvents.map((e) => {
+              const medal =
+                e.reason === "first_place"
+                  ? "🥇"
+                  : e.reason === "second_place"
+                    ? "🥈"
+                    : "🥉"
+              const placeLabel =
+                e.reason === "first_place"
+                  ? "1st place"
+                  : e.reason === "second_place"
+                    ? "2nd place"
+                    : "3rd place"
+              return (
+                <div
+                  key={e.id}
+                  className="rounded-2xl border border-hairline bg-surface px-4 py-3 flex items-center gap-3"
+                >
+                  <span className="text-3xl shrink-0">{medal}</span>
+                  <div className="min-w-0">
+                    <p className="font-display text-base font-bold truncate">
+                      {tNameMap.get(e.tournament_id ?? "") ?? "Tournament"}
+                    </p>
+                    <p className="text-xs text-muted">{placeLabel}</p>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </section>
+      )}
 
       {/* Details */}
       <Card className="p-0 overflow-hidden">

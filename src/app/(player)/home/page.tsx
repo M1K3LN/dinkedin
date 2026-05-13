@@ -31,6 +31,75 @@ export default async function HomePage() {
     .or(`player_id.eq.${user.id},partner_player_id.eq.${user.id}`)
     .eq("status", "registered")
 
+  // Recent completed matches I played in.
+  const { data: myMatches } = await supabase
+    .from("matches")
+    .select(
+      "id, tournament_id, player_1_id, player_2_id, team_1_partner_id, team_2_partner_id, winner_team, score, played_at",
+    )
+    .or(
+      `player_1_id.eq.${user.id},player_2_id.eq.${user.id},team_1_partner_id.eq.${user.id},team_2_partner_id.eq.${user.id}`,
+    )
+    .eq("status", "completed")
+    .order("played_at", { ascending: false, nullsFirst: false })
+    .limit(3)
+
+  // Look up opponent names + tournament names for those matches.
+  let recentMatches: RecentMatch[] = []
+  if (myMatches && myMatches.length > 0) {
+    const oppIds = new Set<string>()
+    const tournIds = new Set<string>()
+    for (const m of myMatches) {
+      tournIds.add(m.tournament_id)
+      const youInTeam1 =
+        m.player_1_id === user.id || m.team_1_partner_id === user.id
+      const opp1 = youInTeam1 ? m.player_2_id : m.player_1_id
+      const opp2 = youInTeam1 ? m.team_2_partner_id : m.team_1_partner_id
+      if (opp1) oppIds.add(opp1)
+      if (opp2) oppIds.add(opp2)
+    }
+    const [{ data: opps }, { data: tNames }] = await Promise.all([
+      oppIds.size
+        ? supabase
+            .from("player_profiles")
+            .select("user_id, display_name")
+            .in("user_id", [...oppIds])
+        : Promise.resolve({ data: [] }),
+      tournIds.size
+        ? supabase
+            .from("tournaments")
+            .select("id, name")
+            .in("id", [...tournIds])
+        : Promise.resolve({ data: [] }),
+    ])
+    const oppMap = new Map(
+      (opps ?? []).map((p) => [p.user_id, p.display_name ?? "Unknown"]),
+    )
+    const tMap = new Map((tNames ?? []).map((t) => [t.id, t.name]))
+
+    recentMatches = myMatches.map((m) => {
+      const youInTeam1 =
+        m.player_1_id === user.id || m.team_1_partner_id === user.id
+      const youWon =
+        (youInTeam1 && m.winner_team === "team_1") ||
+        (!youInTeam1 && m.winner_team === "team_2")
+      const opp1 = youInTeam1 ? m.player_2_id : m.player_1_id
+      const opp2 = youInTeam1 ? m.team_2_partner_id : m.team_1_partner_id
+      const oppLabel = opp2
+        ? `${oppMap.get(opp1 ?? "") ?? "Unknown"} + ${oppMap.get(opp2) ?? "Unknown"}`
+        : oppMap.get(opp1 ?? "") ?? "Unknown"
+      return {
+        id: m.id,
+        tournamentId: m.tournament_id,
+        tournamentName: tMap.get(m.tournament_id) ?? "Tournament",
+        opponent: oppLabel,
+        score: m.score ?? "",
+        won: youWon,
+        playedAt: m.played_at,
+      }
+    })
+  }
+
   let upcoming: UpcomingItem[] = []
   if (myRegs && myRegs.length > 0) {
     const tournamentIds = Array.from(new Set(myRegs.map((r) => r.tournament_id)))
@@ -138,6 +207,56 @@ export default async function HomePage() {
         </div>
       </Card>
 
+      {/* Recent matches */}
+      {recentMatches.length > 0 && (
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <CardEyebrow>Recent matches</CardEyebrow>
+            <span className="text-xs text-muted">
+              {recentMatches.filter((r) => r.won).length}W ·{" "}
+              {recentMatches.filter((r) => !r.won).length}L
+            </span>
+          </div>
+          <Card className="p-0 overflow-hidden">
+            <ul>
+              {recentMatches.map((r, i) => (
+                <li
+                  key={r.id}
+                  className={`flex items-center justify-between gap-3 px-5 py-3 ${
+                    i < recentMatches.length - 1
+                      ? "border-b border-hairline"
+                      : ""
+                  }`}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span
+                      className={`size-8 rounded-full grid place-items-center font-display text-sm font-bold ${
+                        r.won
+                          ? "bg-accent text-accent-ink"
+                          : "bg-surface-2 text-muted"
+                      }`}
+                    >
+                      {r.won ? "W" : "L"}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold truncate">
+                        vs {r.opponent}
+                      </p>
+                      <p className="text-xs text-muted truncate">
+                        {r.tournamentName}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-sm font-display font-bold tabular text-ink-2 shrink-0">
+                    {r.score}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        </section>
+      )}
+
       {/* Up next: registered tournaments */}
       {upcoming.length > 0 && (
         <section className="space-y-3">
@@ -230,6 +349,16 @@ export default async function HomePage() {
       )}
     </div>
   )
+}
+
+type RecentMatch = {
+  id: string
+  tournamentId: string
+  tournamentName: string
+  opponent: string
+  score: string
+  won: boolean
+  playedAt: string | null
 }
 
 type UpcomingItem = {

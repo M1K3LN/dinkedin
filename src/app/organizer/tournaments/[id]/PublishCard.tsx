@@ -6,6 +6,7 @@ import {
   publishTournament,
   unpublishTournament,
 } from "@/lib/tournaments/actions"
+import { activateTournament } from "@/lib/tournaments/matches"
 import { Button } from "@/components/ui/Button"
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner"
 
@@ -39,6 +40,10 @@ export function PublishCard({
     )
   }
 
+  if (status === "completed") {
+    return null
+  }
+
   if (status === "draft") {
     return (
       <div className="flex flex-wrap gap-2 items-center">
@@ -59,16 +64,25 @@ export function PublishCard({
   }
 
   return (
-    <div className="flex gap-2">
+    <div className="flex gap-2 flex-wrap">
       {status === "published" && (
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => handle(() => unpublishTournament(tournamentId))}
-          disabled={pending}
-        >
-          Move to draft
-        </Button>
+        <>
+          <Button
+            size="sm"
+            onClick={() => handle(() => activateTournament(tournamentId))}
+            disabled={pending}
+          >
+            Start tournament
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => handle(() => unpublishTournament(tournamentId))}
+            disabled={pending}
+          >
+            Move to draft
+          </Button>
+        </>
       )}
       <Button
         size="sm"

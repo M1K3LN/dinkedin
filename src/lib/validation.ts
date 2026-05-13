@@ -176,6 +176,43 @@ export type RegistrationFormState =
     }
   | undefined
 
+// =============================================================================
+// Matches
+// =============================================================================
+
+export const MatchCreateSchema = z
+  .object({
+    team_1_registration_id: z.uuid({ error: "Pick the first team." }),
+    team_2_registration_id: z.uuid({ error: "Pick the opposing team." }),
+    round_name: optionalString(60, "Round"),
+  })
+  .refine((d) => d.team_1_registration_id !== d.team_2_registration_id, {
+    error: "Pick two different teams.",
+    path: ["team_2_registration_id"],
+  })
+
+export type MatchCreateInput = z.infer<typeof MatchCreateSchema>
+
+export const MatchScoreSchema = z.object({
+  score: z
+    .string()
+    .trim()
+    .min(1, { error: "Enter a score (e.g. 11-7, 8-11, 11-3)." })
+    .max(120, { error: "That's too long for a score line." }),
+  winner_team: z.enum(["team_1", "team_2"], {
+    error: "Pick which team won.",
+  }),
+})
+
+export type MatchScoreInput = z.infer<typeof MatchScoreSchema>
+
+export type MatchFormState =
+  | {
+      errors?: Record<string, string[]>
+      message?: string
+    }
+  | undefined
+
 export const SKILL_LEVEL_OPTIONS = SKILL_LEVELS
 export const PLAY_TYPE_OPTIONS = PLAY_TYPES
 export const GENDER_TYPE_OPTIONS = GENDER_TYPES
