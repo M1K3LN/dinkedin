@@ -8,6 +8,10 @@ import {
   MatchScoreSchema,
   type MatchFormState,
 } from "@/lib/validation"
+import {
+  generateRoundRobinPairings,
+  scheduleMatches,
+} from "@/lib/match-center/scheduler"
 
 // -----------------------------------------------------------------------------
 // Create a new match (organizer)
@@ -225,4 +229,102 @@ export async function finalizeTournament(
   revalidatePath("/rewards")
   revalidatePath("/home")
   return { ok: true }
+}
+
+// -----------------------------------------------------------------------------
+// Round-robin match generation (organizer)
+// -----------------------------------------------------------------------------
+// Builds a full round-robin schedule for a division. Each registered team
+// plays every other team exactly once. Matches are inserted as 'scheduled',
+// distributed across the requested number of courts, starting at the given
+// time. Refuses to run if matches already exist for the division so we
+// don't double-up.
+//
+// Usage from the UI: call this from the organizer matches section once
+// teams are registered. Players can then enter the Match Center and see
+// the full bracket immediately.
+
+export async function generateRoundRobin(
+  tournamentId: string,
+  divisionId: string,
+  opts: {
+    courts?: number
+    startTime?: string
+    intervalMinutes?: number
+  } = {},
+): Promise<{ ok: boolean; error?: string; matchCount?: number }> {
+  await requireRole("organizer", "admin")
+  const supabase = await createClient()
+
+  const { count: existing } = await supabase
+    .from("matches")
+    .select("id", { count: "exact", head: true })
+    .eq("division_id", divisionId)
+
+  if ((existing ?? 0) > 0) {
+    return {
+      ok: false,
+      error:
+        "This division already has matches. Delete them first if you want a fresh schedule.",
+    }
+  }
+
+  const { data: registrations, error: regErr } = await supabase
+    .from("tournament_registrations")
+    .select("id, player_id, partner_player_id, status")
+    .eq("division_id", divisionId)
+    .neq("status", "canceled")
+    .order("registered_at", { ascending: true })
+
+  if (regErr) return { ok: false, error: regErr.message }
+  if (!registrations || registrations.length < 2) {
+    return {
+      ok: false,
+      error: "Need at least 2 registered teams to generate a round robin.",
+    }
+  }
+
+  const regById = new Map(registrations.map((r) => [r.id, r]))
+  const pairings = generateRoundRobinPairings(registrations.map((r) => r.id))
+
+  const scheduled = scheduleMatches({
+    pairings,
+    courts: opts.courts ?? 4,
+    startTime: opts.startTime ?? defaultStartTime(),
+    intervalMinutes: opts.intervalMinutes ?? 30,
+  })
+
+  const rows = scheduled.map((p) => {
+    const t1 = regById.get(p.team1Id)!
+    const t2 = regById.get(p.team2Id)!
+    return {
+      tournament_id: tournamentId,
+      division_id: divisionId,
+      round_number: p.round,
+      round_name: `Round ${p.round}`,
+      court_number: p.courtNumber,
+      scheduled_time: p.scheduledTime,
+      player_1_id: t1.player_id,
+      team_1_partner_id: t1.partner_player_id,
+      player_2_id: t2.player_id,
+      team_2_partner_id: t2.partner_player_id,
+      status: "scheduled" as const,
+    }
+  })
+
+  const { error: insertErr } = await supabase.from("matches").insert(rows)
+  if (insertErr) return { ok: false, error: insertErr.message }
+
+  revalidatePath(`/organizer/tournaments/${tournamentId}`)
+  revalidatePath(`/tournaments/${tournamentId}`)
+  revalidatePath(`/tournaments/${tournamentId}/match-center`)
+  return { ok: true, matchCount: rows.length }
+}
+
+function defaultStartTime(): string {
+  // Tomorrow at 9 AM local time.
+  const d = new Date()
+  d.setDate(d.getDate() + 1)
+  d.setHours(9, 0, 0, 0)
+  return d.toISOString()
 }

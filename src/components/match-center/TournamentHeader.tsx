@@ -33,8 +33,24 @@ export function TournamentHeader({
     )
 
   return (
-    <Card tone="dark" className="overflow-hidden p-6 md:p-8">
-      <div className="flex items-center gap-2 flex-wrap">
+    <Card tone="dark" className="relative overflow-hidden p-6 md:p-8">
+      {/* Subtle pickleball-court line pattern */}
+      <div
+        aria-hidden
+        className="absolute inset-0 opacity-[0.08] pointer-events-none"
+        style={{
+          backgroundImage:
+            "linear-gradient(0deg, transparent 49%, rgba(247,245,238,0.9) 50%, transparent 51%), linear-gradient(90deg, transparent 49%, rgba(247,245,238,0.6) 50%, transparent 51%)",
+          backgroundSize: "100% 88px, 33% 100%",
+          backgroundPosition: "center, 33.33% 0",
+          backgroundRepeat: "no-repeat",
+        }}
+      />
+      <div
+        aria-hidden
+        className="absolute -bottom-24 -right-12 size-72 rounded-full bg-accent/15 blur-3xl pointer-events-none"
+      />
+      <div className="relative flex items-center gap-2 flex-wrap">
         {statusBadge}
         <Badge tone="outline" className="!text-primary-ink/80 !border-white/20">
           {PLAY_TYPE_LABELS[division.playType]}

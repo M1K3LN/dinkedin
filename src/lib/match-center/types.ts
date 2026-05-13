@@ -39,6 +39,11 @@ export type Team = {
   seed: number | null
 }
 
+/** UI-extended status: the DB only knows scheduled/completed/disputed/canceled
+ *  but the Match Center can also render "live" for in-progress matches when
+ *  the data source provides it (demo mock and, eventually, real live scoring). */
+export type MatchUiStatus = MatchStatus | "live"
+
 export type Match = {
   id: string
   divisionId: string
@@ -51,7 +56,7 @@ export type Match = {
   team1Score: number | null
   team2Score: number | null
   winnerTeam: WinnerTeam | null
-  status: MatchStatus
+  status: MatchUiStatus
 }
 
 export type AdvancementStatus =

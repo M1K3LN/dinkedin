@@ -4,6 +4,7 @@ import { useActionState, useState, useTransition } from "react"
 import {
   createMatch,
   deleteMatch,
+  generateRoundRobin,
   scoreMatch,
 } from "@/lib/tournaments/matches"
 import { type MatchFormState } from "@/lib/validation"
@@ -91,6 +92,14 @@ export function MatchesPanel({
           registrations={registrations}
           onCancel={() => setAdding(false)}
           onSaved={() => setAdding(false)}
+        />
+      )}
+
+      {!adding && !locked && matches.length === 0 && registrations.length >= 2 && (
+        <GenerateRoundRobinButton
+          tournamentId={tournamentId}
+          divisionId={division.id}
+          teamCount={registrations.length}
         />
       )}
 
@@ -368,3 +377,44 @@ function ScoreForm({
   )
 }
 
+
+function GenerateRoundRobinButton({
+  tournamentId,
+  divisionId,
+  teamCount,
+}: {
+  tournamentId: string
+  divisionId: string
+  teamCount: number
+}) {
+  const [pending, startTransition] = useTransition()
+  const totalMatches = (teamCount * (teamCount - 1)) / 2
+  const onClick = () => {
+    if (
+      !confirm(
+        `Generate a full round-robin schedule? Creates ${totalMatches} matches across ${teamCount - 1} rounds.`,
+      )
+    )
+      return
+    startTransition(async () => {
+      const res = await generateRoundRobin(tournamentId, divisionId)
+      if (!res.ok) alert(res.error ?? "Could not generate matches.")
+    })
+  }
+  return (
+    <div className="rounded-2xl bg-accent/15 border border-accent/40 p-4 space-y-2">
+      <p className="font-semibold text-sm">Generate round-robin schedule</p>
+      <p className="text-xs text-muted">
+        Every team plays every other team. {totalMatches} matches across{" "}
+        {teamCount - 1} rounds, spread across 4 courts.
+      </p>
+      <Button size="sm" onClick={onClick} disabled={pending}>
+        {pending ? (
+          <LoadingSpinner className="text-current" />
+        ) : (
+          "Generate matches"
+        )}
+      </Button>
+    </div>
+  )
+}

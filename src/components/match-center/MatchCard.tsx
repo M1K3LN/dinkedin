@@ -36,14 +36,19 @@ export function MatchCard({
       })
     : null
 
+  const isLive = match.status === "live"
+
   return (
     <Card
       className={cn(
-        "p-0 overflow-hidden",
+        "p-0 overflow-hidden relative",
         isMine && "ring-2 ring-accent",
+        isLive && "ring-2 ring-accent",
       )}
     >
-      {/* Meta row */}
+      {isLive && (
+        <div className="absolute inset-x-0 top-0 h-1 bg-accent animate-pulse" />
+      )}
       <div className="flex items-center justify-between gap-2 px-4 pt-3 flex-wrap">
         <div className="flex items-center gap-1.5 flex-wrap">
           {showRoundLabel && (
@@ -60,25 +65,31 @@ export function MatchCard({
         <MatchStatusBadge status={match.status} />
       </div>
 
-      {/* Teams */}
       <div className="px-4 py-3 space-y-1.5">
         <TeamRow
           label={team1?.label ?? "Team 1"}
           score={match.team1Score}
           isWinner={team1Won}
           isMine={!!myTeamId && match.team1Id === myTeamId}
+          isLive={isLive}
         />
         <TeamRow
           label={team2?.label ?? "Team 2"}
           score={match.team2Score}
           isWinner={team2Won}
           isMine={!!myTeamId && match.team2Id === myTeamId}
+          isLive={isLive}
         />
       </div>
 
       {completed && diff != null && (
         <div className="px-4 pb-3 text-[11px] text-muted">
           +{diff} point differential
+        </div>
+      )}
+      {isLive && (
+        <div className="px-4 pb-3 text-[11px] text-primary font-semibold">
+          Currently playing · refresh for the latest score
         </div>
       )}
     </Card>
@@ -90,11 +101,13 @@ function TeamRow({
   score,
   isWinner,
   isMine,
+  isLive,
 }: {
   label: string
   score: number | null
   isWinner: boolean
   isMine: boolean
+  isLive?: boolean
 }) {
   return (
     <div
@@ -117,6 +130,7 @@ function TeamRow({
           "font-display text-xl font-bold tabular shrink-0",
           score == null && "text-muted",
           isWinner && "text-primary",
+          isLive && score != null && "text-primary",
         )}
       >
         {score == null ? "—" : score}

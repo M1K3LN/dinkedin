@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useRef, useState } from "react"
 import { TournamentHeader } from "./TournamentHeader"
 import { MyNextMatchCard } from "./MyNextMatchCard"
 import { MyStandingAdvancementCard } from "./MyStandingAdvancementCard"
@@ -10,6 +10,8 @@ import { StandingsLeaderboard } from "./StandingsLeaderboard"
 import { Card, CardEyebrow } from "@/components/ui/Card"
 import { calculatePointsEligibility } from "@/lib/match-center/eligibility"
 import type { MatchCenterData } from "@/lib/match-center/types"
+
+const SWIPE_THRESHOLD_PX = 60
 
 export function MatchCenter({ data }: { data: MatchCenterData }) {
   const {
@@ -61,6 +63,26 @@ export function MatchCenter({ data }: { data: MatchCenterData }) {
     divisionStatus: division.pointsEligibilityStatus,
   })
 
+  // Build the ordered list of tabs (rounds + "standings") so swipe gestures
+  // can step through it.
+  const tabOrder: (number | "standings")[] = [...rounds, "standings"]
+  const touchStartX = useRef<number | null>(null)
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0]?.clientX ?? null
+  }
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const start = touchStartX.current
+    touchStartX.current = null
+    if (start == null) return
+    const dx = (e.changedTouches[0]?.clientX ?? start) - start
+    if (Math.abs(dx) < SWIPE_THRESHOLD_PX) return
+    const idx = tabOrder.indexOf(activeTab)
+    if (idx < 0) return
+    const nextIdx = dx < 0 ? idx + 1 : idx - 1
+    if (nextIdx < 0 || nextIdx >= tabOrder.length) return
+    setActiveTab(tabOrder[nextIdx])
+  }
+
   return (
     <div className="space-y-6 pb-8">
       <TournamentHeader
@@ -99,21 +121,27 @@ export function MatchCenter({ data }: { data: MatchCenterData }) {
         myMatchByRound={myMatchByRound}
       />
 
-      {typeof activeTab === "number" ? (
-        <RoundMatchList
-          matches={matchesInActiveRound}
-          teams={teams}
-          myTeamId={myTeam?.id ?? null}
-          round={activeTab}
-        />
-      ) : (
-        <StandingsLeaderboard
-          standings={standings}
-          teams={teams}
-          division={division}
-          myTeamId={myTeam?.id ?? null}
-        />
-      )}
+      <div
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+        className="touch-pan-y"
+      >
+        {typeof activeTab === "number" ? (
+          <RoundMatchList
+            matches={matchesInActiveRound}
+            teams={teams}
+            myTeamId={myTeam?.id ?? null}
+            round={activeTab}
+          />
+        ) : (
+          <StandingsLeaderboard
+            standings={standings}
+            teams={teams}
+            division={division}
+            myTeamId={myTeam?.id ?? null}
+          />
+        )}
+      </div>
 
       {/* Always show the leaderboard at the bottom for quick reference,
           unless the user is already on the standings tab. */}

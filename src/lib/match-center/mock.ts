@@ -102,24 +102,30 @@ function makeMatches(teams: Team[]): Match[] {
   }
 
   // Round 2 — most played, viewer's match still upcoming.
-  // Viewer team beat #19, lost #18; needs another win to stay near cutoff.
-  // Schedule viewer team (0) vs Johnson/Lee (1) on Court 4 at 11:30 AM,
-  // currently scheduled (not yet played) — that's "Your Next Match".
-  const round2Schedule: Array<[number, number, number | null, number | null]> = [
-    [0, 1, null, null], // viewer vs Johnson/Lee — UPCOMING
-    [2, 3, 11, 6],
-    [4, 5, 7, 11],
-    [6, 7, 11, 9],
-    [8, 9, 11, 4],
-    [10, 11, 9, 11],
-    [12, 13, 11, 8],
-    [14, 15, 11, 6],
-    [16, 17, 5, 11],
-    [18, 19, 11, 8],
+  // The Park/Davis vs Hernandez/Wong court is currently LIVE so the UI can
+  // show an in-progress match alongside the viewer's upcoming one.
+  type R2Row = [number, number, number | null, number | null, "live" | null]
+  const round2Schedule: R2Row[] = [
+    [0, 1, null, null, null], // viewer vs Johnson/Lee — UPCOMING
+    [2, 3, 11, 6, null],
+    [4, 5, 7, 11, null],
+    [6, 7, 8, 6, "live"],     // LIVE — currently 8-6 mid-game
+    [8, 9, 11, 4, null],
+    [10, 11, 9, 11, null],
+    [12, 13, 11, 8, null],
+    [14, 15, 11, 6, null],
+    [16, 17, 5, 11, null],
+    [18, 19, 11, 8, null],
   ]
-  for (const [a, b, sa, sb] of round2Schedule) {
-    const completed = sa != null && sb != null
+  for (const [a, b, sa, sb, special] of round2Schedule) {
+    const completed = sa != null && sb != null && special !== "live"
     const team1Won = completed && (sa as number) > (sb as number)
+    const status =
+      special === "live"
+        ? "live"
+        : completed
+          ? "completed"
+          : "scheduled"
     matches.push({
       id: `m-${matchSeq++}`,
       divisionId: FIXED_DIVISION_ID,
@@ -129,10 +135,10 @@ function makeMatches(teams: Team[]): Match[] {
       scheduledTime: a === 0 && b === 1 ? scheduleTime("11:30", 0) : scheduleTime("10:30", a),
       team1Id: teams[a].id,
       team2Id: teams[b].id,
-      team1Score: sa,
-      team2Score: sb,
+      team1Score: special === "live" ? sa : completed ? sa : null,
+      team2Score: special === "live" ? sb : completed ? sb : null,
       winnerTeam: completed ? (team1Won ? "team_1" : "team_2") : null,
-      status: completed ? "completed" : "scheduled",
+      status,
     })
   }
 
