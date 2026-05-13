@@ -428,6 +428,24 @@ export type Database = {
       find_user_id_by_email: { Args: { p_email: string }; Returns: string | null }
       is_admin: { Args: never; Returns: boolean }
       is_organizer_or_admin: { Args: never; Returns: boolean }
+      mark_redemption_active: {
+        Args: { p_redemption_id: string; p_shopify_discount_id: string }
+        Returns: undefined
+      }
+      mark_redemption_failed: {
+        Args: { p_redemption_id: string }
+        Returns: undefined
+      }
+      redeem_reward_points: {
+        Args: {
+          p_points_required: number
+          p_discount_type: Database["public"]["Enums"]["shopify_discount_type"]
+          p_discount_value: number
+          p_code: string
+          p_expires_at: string
+        }
+        Returns: string
+      }
       reopen_tournament: { Args: { p_tournament_id: string }; Returns: undefined }
     }
     Enums: {
