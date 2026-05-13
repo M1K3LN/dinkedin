@@ -23,11 +23,26 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
   } = await supabase.auth.getUser()
   if (!user) return null
 
-  const { data: profile } = await supabase
+  const { data: profile, error } = await supabase
     .from("profiles")
     .select("role, first_name, last_name, email")
     .eq("user_id", user.id)
     .maybeSingle()
+
+  if (error || !profile) {
+    console.warn("[getSessionUser] profile lookup miss", {
+      authUserId: user.id,
+      authEmail: user.email,
+      hasProfile: !!profile,
+      error: error?.message ?? null,
+    })
+  } else {
+    console.log("[getSessionUser] resolved", {
+      authUserId: user.id,
+      email: profile.email,
+      role: profile.role,
+    })
+  }
 
   return {
     id: user.id,
