@@ -66,7 +66,7 @@ export default async function PublicTournamentPage({
   const { data: divisions } = await supabase
     .from("tournament_divisions")
     .select(
-      "id, name, skill_level, play_type, gender_type, max_players, entry_fee",
+      "id, name, skill_level, play_type, gender_type, max_players, entry_fee, min_teams_for_points, points_eligibility_status, points_eligible, teams_advancing",
     )
     .eq("tournament_id", id)
     .order("created_at", { ascending: true })
@@ -175,6 +175,8 @@ export default async function PublicTournamentPage({
             {divisions.map((d) => (
               <DivisionRegisterCard
                 key={d.id}
+                tournamentId={id}
+                tournamentStatus={tournament.status}
                 division={{
                   ...d,
                   skill_level:
@@ -184,6 +186,9 @@ export default async function PublicTournamentPage({
                   play_type_label: PLAY_TYPE_LABELS[d.play_type],
                   gender_type_label: GENDER_TYPE_LABELS[d.gender_type],
                   filled: countByDiv[d.id] ?? 0,
+                  min_teams_for_points: d.min_teams_for_points,
+                  points_eligibility_status: d.points_eligibility_status,
+                  teams_advancing: d.teams_advancing,
                 }}
                 youAreIn={myDivIds.has(d.id)}
                 registrationOpen={registrationOpen}

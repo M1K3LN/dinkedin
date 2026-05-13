@@ -18,7 +18,8 @@ type Match = {
   id: string
   round_name: string | null
   status: string
-  score: string | null
+  team_1_score: number | null
+  team_2_score: number | null
   winner_team: "team_1" | "team_2" | null
   team_1_label: string
   team_2_label: string
@@ -163,14 +164,21 @@ function MatchRow({
               {match.team_2_label}
             </p>
           </div>
-          {isComplete && match.score && (
-            <p className="text-xs text-muted tabular mt-1.5">
-              {match.score}
-              {winnerLabel && (
-                <> · <span className="font-semibold text-primary">{winnerLabel}</span> won</>
-              )}
-            </p>
-          )}
+          {isComplete &&
+            match.team_1_score != null &&
+            match.team_2_score != null && (
+              <p className="text-xs text-muted tabular mt-1.5">
+                {match.team_1_score}–{match.team_2_score}
+                {winnerLabel && (
+                  <>
+                    {" "}
+                    ·{" "}
+                    <span className="font-semibold text-primary">{winnerLabel}</span>{" "}
+                    won
+                  </>
+                )}
+              </p>
+            )}
         </div>
         <div className="flex flex-col gap-1 shrink-0">
           {isComplete ? (
@@ -309,39 +317,33 @@ function ScoreForm({
       </div>
 
       <form action={action} className="space-y-3">
-        <Field
-          label="Score"
-          name="score"
-          required
-          defaultValue={match.score ?? ""}
-          placeholder="11-7, 8-11, 11-3"
-          error={err("score")}
-        />
-
-        <fieldset>
-          <legend className="text-sm font-medium text-ink-2 mb-2">
-            Who won?
-          </legend>
-          <div className="grid grid-cols-2 gap-2">
-            <WinnerRadio
-              name="winner_team"
-              value="team_1"
-              label={match.team_1_label}
-              defaultChecked={match.winner_team === "team_1"}
-            />
-            <WinnerRadio
-              name="winner_team"
-              value="team_2"
-              label={match.team_2_label}
-              defaultChecked={match.winner_team === "team_2"}
-            />
-          </div>
-          {err("winner_team") && (
-            <p className="text-xs text-warn font-medium mt-1.5">
-              {err("winner_team")}
-            </p>
-          )}
-        </fieldset>
+        <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-3">
+          <Field
+            label={match.team_1_label}
+            name="team_1_score"
+            type="number"
+            inputMode="numeric"
+            min={0}
+            max={99}
+            required
+            defaultValue={match.team_1_score ?? ""}
+            error={err("team_1_score")}
+          />
+          <span className="text-xs text-muted font-bold uppercase tracking-[0.14em] pb-3.5">
+            vs
+          </span>
+          <Field
+            label={match.team_2_label}
+            name="team_2_score"
+            type="number"
+            inputMode="numeric"
+            min={0}
+            max={99}
+            required
+            defaultValue={match.team_2_score ?? ""}
+            error={err("team_2_score")}
+          />
+        </div>
 
         {state?.errors?.form && (
           <p className="text-sm text-warn bg-warn/10 rounded-2xl px-3.5 py-2.5 font-medium">
@@ -366,27 +368,3 @@ function ScoreForm({
   )
 }
 
-function WinnerRadio({
-  name,
-  value,
-  label,
-  defaultChecked,
-}: {
-  name: string
-  value: string
-  label: string
-  defaultChecked?: boolean
-}) {
-  return (
-    <label className="cursor-pointer rounded-2xl border border-hairline bg-surface px-3 py-2.5 text-sm font-semibold text-ink-2 has-[:checked]:bg-accent has-[:checked]:text-accent-ink has-[:checked]:border-accent transition-colors flex items-center gap-2">
-      <input
-        type="radio"
-        name={name}
-        value={value}
-        defaultChecked={defaultChecked}
-        className="size-4 accent-primary"
-      />
-      <span className="truncate">{label}</span>
-    </label>
-  )
-}

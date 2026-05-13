@@ -33,7 +33,7 @@ export async function MatchesSection({
     supabase
       .from("matches")
       .select(
-        "id, division_id, round_name, player_1_id, player_2_id, team_1_partner_id, team_2_partner_id, winner_team, winner_player_id, score, status, played_at",
+        "id, division_id, round_name, player_1_id, player_2_id, team_1_partner_id, team_2_partner_id, winner_team, winner_player_id, team_1_score, team_2_score, status, played_at",
       )
       .in("division_id", divisionIds)
       .order("created_at", { ascending: true }),
@@ -121,7 +121,8 @@ export async function MatchesSection({
                   id: m.id,
                   round_name: m.round_name,
                   status: m.status,
-                  score: m.score,
+                  team_1_score: m.team_1_score,
+                  team_2_score: m.team_2_score,
                   winner_team: m.winner_team,
                   team_1_label: teamLabel(
                     playerNameMap.get(m.player_1_id ?? "") ?? "Unknown",

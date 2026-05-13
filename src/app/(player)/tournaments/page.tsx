@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/ui/PageHeader"
 import { EmptyState } from "@/components/ui/EmptyState"
 import { Card, CardEyebrow } from "@/components/ui/Card"
 import { Badge } from "@/components/ui/Badge"
+import { Button } from "@/components/ui/Button"
 
 export const metadata = { title: "Tournaments · Dinkedin" }
 export const dynamic = "force-dynamic"
@@ -49,6 +50,13 @@ export default async function TournamentsPage() {
         eyebrow="Find your next match"
         title="Tournaments"
         description="Browse open events near and far. Tap into a tournament to see divisions and register."
+        action={
+          <Link href="/match-center-demo">
+            <Button variant="outline" size="sm">
+              Try Match Center demo
+            </Button>
+          </Link>
+        }
       />
 
       {upcoming.length === 0 && past.length === 0 ? (

@@ -14,6 +14,7 @@ export type Database = {
     Tables: {
       matches: {
         Row: {
+          court_number: number | null
           created_at: string
           division_id: string
           id: string
@@ -21,16 +22,21 @@ export type Database = {
           player_1_id: string | null
           player_2_id: string | null
           round_name: string | null
+          round_number: number | null
+          scheduled_time: string | null
           score: string | null
           status: Database["public"]["Enums"]["match_status"]
           team_1_partner_id: string | null
+          team_1_score: number | null
           team_2_partner_id: string | null
+          team_2_score: number | null
           tournament_id: string
           updated_at: string
           winner_player_id: string | null
           winner_team: Database["public"]["Enums"]["winner_team"] | null
         }
         Insert: {
+          court_number?: number | null
           created_at?: string
           division_id: string
           id?: string
@@ -38,16 +44,21 @@ export type Database = {
           player_1_id?: string | null
           player_2_id?: string | null
           round_name?: string | null
+          round_number?: number | null
+          scheduled_time?: string | null
           score?: string | null
           status?: Database["public"]["Enums"]["match_status"]
           team_1_partner_id?: string | null
+          team_1_score?: number | null
           team_2_partner_id?: string | null
+          team_2_score?: number | null
           tournament_id: string
           updated_at?: string
           winner_player_id?: string | null
           winner_team?: Database["public"]["Enums"]["winner_team"] | null
         }
         Update: {
+          court_number?: number | null
           created_at?: string
           division_id?: string
           id?: string
@@ -55,10 +66,14 @@ export type Database = {
           player_1_id?: string | null
           player_2_id?: string | null
           round_name?: string | null
+          round_number?: number | null
+          scheduled_time?: string | null
           score?: string | null
           status?: Database["public"]["Enums"]["match_status"]
           team_1_partner_id?: string | null
+          team_1_score?: number | null
           team_2_partner_id?: string | null
+          team_2_score?: number | null
           tournament_id?: string
           updated_at?: string
           winner_player_id?: string | null
@@ -295,36 +310,51 @@ export type Database = {
         Row: {
           created_at: string
           entry_fee: number
+          finalized_at: string | null
           gender_type: Database["public"]["Enums"]["gender_type"]
           id: string
           max_players: number | null
+          min_teams_for_points: number
           name: string
           play_type: Database["public"]["Enums"]["play_type"]
+          points_eligibility_status: Database["public"]["Enums"]["points_eligibility_status"]
+          points_eligible: boolean
           skill_level: number | null
+          teams_advancing: number | null
           tournament_id: string
           updated_at: string
         }
         Insert: {
           created_at?: string
           entry_fee?: number
+          finalized_at?: string | null
           gender_type?: Database["public"]["Enums"]["gender_type"]
           id?: string
           max_players?: number | null
+          min_teams_for_points?: number
           name: string
           play_type: Database["public"]["Enums"]["play_type"]
+          points_eligibility_status?: Database["public"]["Enums"]["points_eligibility_status"]
+          points_eligible?: boolean
           skill_level?: number | null
+          teams_advancing?: number | null
           tournament_id: string
           updated_at?: string
         }
         Update: {
           created_at?: string
           entry_fee?: number
+          finalized_at?: string | null
           gender_type?: Database["public"]["Enums"]["gender_type"]
           id?: string
           max_players?: number | null
+          min_teams_for_points?: number
           name?: string
           play_type?: Database["public"]["Enums"]["play_type"]
+          points_eligibility_status?: Database["public"]["Enums"]["points_eligibility_status"]
+          points_eligible?: boolean
           skill_level?: number | null
+          teams_advancing?: number | null
           tournament_id?: string
           updated_at?: string
         }
@@ -421,7 +451,7 @@ export type Database = {
     Views: { [_ in never]: never }
     Functions: {
       award_tournament_placements: {
-        Args: { p_tournament_id: string; p_placements: Json }
+        Args: { p_placements: Json; p_tournament_id: string }
         Returns: undefined
       }
       current_user_role: { Args: never; Returns: Database["public"]["Enums"]["user_role"] }
@@ -432,17 +462,14 @@ export type Database = {
         Args: { p_redemption_id: string; p_shopify_discount_id: string }
         Returns: undefined
       }
-      mark_redemption_failed: {
-        Args: { p_redemption_id: string }
-        Returns: undefined
-      }
+      mark_redemption_failed: { Args: { p_redemption_id: string }; Returns: undefined }
       redeem_reward_points: {
         Args: {
-          p_points_required: number
+          p_code: string
           p_discount_type: Database["public"]["Enums"]["shopify_discount_type"]
           p_discount_value: number
-          p_code: string
           p_expires_at: string
+          p_points_required: number
         }
         Returns: string
       }
@@ -452,6 +479,11 @@ export type Database = {
       gender_type: "mens" | "womens" | "mixed" | "open"
       match_status: "scheduled" | "completed" | "disputed" | "canceled"
       play_type: "singles" | "doubles" | "mixed_doubles"
+      points_eligibility_status:
+        | "pending_minimum_teams"
+        | "points_eligible"
+        | "tracked_only"
+        | "canceled"
       ranking_event_reason:
         | "tournament_registration"
         | "match_win"
@@ -479,7 +511,20 @@ export type Database = {
   }
 }
 
+// Convenience aliases used throughout the app.
 export type UserRole = Database["public"]["Enums"]["user_role"]
 export type Profile = Database["public"]["Tables"]["profiles"]["Row"]
 export type PlayerProfile = Database["public"]["Tables"]["player_profiles"]["Row"]
 export type Tournament = Database["public"]["Tables"]["tournaments"]["Row"]
+export type TournamentDivision =
+  Database["public"]["Tables"]["tournament_divisions"]["Row"]
+export type TournamentRegistration =
+  Database["public"]["Tables"]["tournament_registrations"]["Row"]
+export type Match = Database["public"]["Tables"]["matches"]["Row"]
+export type MatchStatus = Database["public"]["Enums"]["match_status"]
+export type TournamentStatus = Database["public"]["Enums"]["tournament_status"]
+export type PointsEligibilityStatus =
+  Database["public"]["Enums"]["points_eligibility_status"]
+export type PlayType = Database["public"]["Enums"]["play_type"]
+export type GenderType = Database["public"]["Enums"]["gender_type"]
+export type WinnerTeam = Database["public"]["Enums"]["winner_team"]

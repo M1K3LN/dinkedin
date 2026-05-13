@@ -193,16 +193,23 @@ export const MatchCreateSchema = z
 
 export type MatchCreateInput = z.infer<typeof MatchCreateSchema>
 
-export const MatchScoreSchema = z.object({
-  score: z
-    .string()
-    .trim()
-    .min(1, { error: "Enter a score (e.g. 11-7, 8-11, 11-3)." })
-    .max(120, { error: "That's too long for a score line." }),
-  winner_team: z.enum(["team_1", "team_2"], {
-    error: "Pick which team won.",
-  }),
-})
+export const MatchScoreSchema = z
+  .object({
+    team_1_score: z.coerce
+      .number({ error: "Enter a number." })
+      .int({ error: "Whole numbers only." })
+      .min(0, { error: "No negatives." })
+      .max(99, { error: "Too high." }),
+    team_2_score: z.coerce
+      .number({ error: "Enter a number." })
+      .int({ error: "Whole numbers only." })
+      .min(0, { error: "No negatives." })
+      .max(99, { error: "Too high." }),
+  })
+  .refine((d) => d.team_1_score !== d.team_2_score, {
+    error: "Scores can't be tied.",
+    path: ["team_2_score"],
+  })
 
 export type MatchScoreInput = z.infer<typeof MatchScoreSchema>
 

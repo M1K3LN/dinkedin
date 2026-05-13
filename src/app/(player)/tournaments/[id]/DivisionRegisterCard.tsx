@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { useActionState, useState } from "react"
 import { registerForDivision } from "@/lib/tournaments/register"
 import {
@@ -11,6 +12,8 @@ import { Button } from "@/components/ui/Button"
 import { Card } from "@/components/ui/Card"
 import { Badge } from "@/components/ui/Badge"
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner"
+import { PointsEligibilityBadge } from "@/components/match-center/PointsEligibilityBadge"
+import type { PointsEligibilityStatus } from "@/types/database"
 
 type PlayType = (typeof PLAY_TYPE_OPTIONS)[number]
 
@@ -25,13 +28,20 @@ type Division = {
   play_type_label: string
   gender_type_label: string
   filled: number
+  min_teams_for_points: number
+  points_eligibility_status: PointsEligibilityStatus
+  teams_advancing: number | null
 }
 
 export function DivisionRegisterCard({
+  tournamentId,
+  tournamentStatus,
   division,
   youAreIn,
   registrationOpen,
 }: {
+  tournamentId: string
+  tournamentStatus: string
   division: Division
   youAreIn: boolean
   registrationOpen: boolean
@@ -41,6 +51,8 @@ export function DivisionRegisterCard({
     division.play_type === "doubles" || division.play_type === "mixed_doubles"
   const isFull =
     division.max_players != null && division.filled >= division.max_players
+  const matchCenterReady =
+    tournamentStatus === "active" || tournamentStatus === "completed"
 
   const [state, action, pending] = useActionState<
     RegistrationFormState,
@@ -66,6 +78,16 @@ export function DivisionRegisterCard({
             {division.entry_fee > 0 && (
               <Badge tone="outline">${division.entry_fee.toFixed(0)}</Badge>
             )}
+            <PointsEligibilityBadge
+              status={division.points_eligibility_status}
+              teamCount={division.filled}
+              minTeams={division.min_teams_for_points}
+            />
+            {division.teams_advancing != null && (
+              <Badge tone="outline">
+                Top {division.teams_advancing} advance
+              </Badge>
+            )}
           </div>
         </div>
         <div className="text-right shrink-0">
@@ -85,7 +107,7 @@ export function DivisionRegisterCard({
             </p>
           )}
           <p className="text-[10px] uppercase tracking-[0.14em] text-muted font-semibold">
-            registered
+            teams
           </p>
         </div>
       </div>
@@ -102,15 +124,26 @@ export function DivisionRegisterCard({
           <Badge tone="warn">Full</Badge>
         ) : (
           <span className="text-xs text-muted">
-            +5 ranking & +50 reward points on register
+            {division.points_eligibility_status === "points_eligible"
+              ? "+5 ranking & +50 reward points on register"
+              : "Tracked only — no points awarded"}
           </span>
         )}
 
-        {!youAreIn && !success && registrationOpen && !isFull && (
-          <Button size="sm" onClick={() => setOpen((v) => !v)}>
-            {open ? "Cancel" : "Register"}
-          </Button>
-        )}
+        <div className="flex gap-2">
+          {youAreIn && matchCenterReady && (
+            <Link
+              href={`/tournaments/${tournamentId}/match-center?division=${division.id}`}
+            >
+              <Button size="sm">Match Center</Button>
+            </Link>
+          )}
+          {!youAreIn && !success && registrationOpen && !isFull && (
+            <Button size="sm" onClick={() => setOpen((v) => !v)}>
+              {open ? "Cancel" : "Register"}
+            </Button>
+          )}
+        </div>
       </div>
 
       {open && !youAreIn && !success && (

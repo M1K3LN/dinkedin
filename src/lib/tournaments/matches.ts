@@ -80,8 +80,8 @@ export async function scoreMatch(
   await requireRole("organizer", "admin")
 
   const parsed = MatchScoreSchema.safeParse({
-    score: formData.get("score") ?? "",
-    winner_team: formData.get("winner_team") ?? "",
+    team_1_score: formData.get("team_1_score") ?? "",
+    team_2_score: formData.get("team_2_score") ?? "",
   })
   if (!parsed.success) {
     const flat = parsed.error.flatten()
@@ -90,10 +90,11 @@ export async function scoreMatch(
 
   const supabase = await createClient()
 
-  // Look up to derive winner_player_id for singles matches.
   const { data: match, error: mErr } = await supabase
     .from("matches")
-    .select("id, tournament_id, division_id, player_1_id, player_2_id, team_1_partner_id, team_2_partner_id")
+    .select(
+      "id, tournament_id, division_id, player_1_id, player_2_id, team_1_partner_id, team_2_partner_id",
+    )
     .eq("id", matchId)
     .maybeSingle()
 
@@ -101,15 +102,18 @@ export async function scoreMatch(
 
   const isDoubles =
     match.team_1_partner_id != null || match.team_2_partner_id != null
-
+  const winner_team: "team_1" | "team_2" =
+    parsed.data.team_1_score > parsed.data.team_2_score ? "team_1" : "team_2"
   const winner_player_id =
-    parsed.data.winner_team === "team_1" ? match.player_1_id : match.player_2_id
+    winner_team === "team_1" ? match.player_1_id : match.player_2_id
 
   const { error } = await supabase
     .from("matches")
     .update({
-      score: parsed.data.score,
-      winner_team: parsed.data.winner_team,
+      team_1_score: parsed.data.team_1_score,
+      team_2_score: parsed.data.team_2_score,
+      score: `${parsed.data.team_1_score}-${parsed.data.team_2_score}`,
+      winner_team,
       winner_player_id: isDoubles ? null : winner_player_id,
       status: "completed",
       played_at: new Date().toISOString(),
